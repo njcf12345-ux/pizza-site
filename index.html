@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYC Pizza Wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#0a0a0a;color:#fff;font-family:"Space Grotesk",sans-serif;}
+body{display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:32px 16px 48px;}
+.hero{text-align:center;margin-bottom:24px;}
+.hero-title{font-family:"Bebas Neue",sans-serif;font-size:68px;letter-spacing:4px;line-height:0.95;}
+.hero-title span{color:#ff4500;}
+.hero-sub{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#555;margin-top:6px;}
+.phase-badge{display:inline-flex;align-items:center;gap:8px;background:#161616;border:1px solid #ff4500;border-radius:20px;padding:6px 16px;margin-top:10px;font-size:12px;color:#ff4500;font-weight:500;}
+.phase-dot{width:8px;height:8px;border-radius:50%;background:#ff4500;flex-shrink:0;}
+.main{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%;max-width:1020px;}
+.wheel-col{display:flex;flex-direction:column;align-items:center;gap:18px;}
+.canvas-wrap{position:relative;width:420px;height:420px;}
+canvas{display:block;}
+.pointer-wrap{position:absolute;top:0;left:50%;transform:translateX(-50%);}
+.pointer-arrow{width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-top:34px solid #ff4500;margin:0 auto;}
+.pointer-line{width:2px;height:20px;background:#ff4500;margin:0 auto;}
+.spin-btn{background:#ff4500;color:#fff;border:none;font-family:"Bebas Neue",sans-serif;font-size:30px;letter-spacing:4px;padding:16px 64px;border-radius:4px;cursor:pointer;transition:transform 0.1s;width:100%;}
+.spin-btn:hover{background:#ff5a14;}
+.spin-btn:active{transform:scale(0.97);}
+.spin-btn:disabled{background:#222;color:#444;cursor:not-allowed;}
+.spin-meta{font-size:11px;color:#444;letter-spacing:1.5px;text-transform:uppercase;text-align:center;}
+.right-col{display:flex;flex-direction:column;gap:14px;width:400px;min-width:280px;}
+.card{background:#111;border:1px solid #1e1e1e;border-radius:16px;padding:22px;transition:border-color 0.3s;}
+.card.active{border-color:#ff4500;}
+.card-eye{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#555;margin-bottom:6px;}
+.result-name{font-family:"Bebas Neue",sans-serif;font-size:38px;line-height:1;color:#fff;margin-bottom:6px;min-height:42px;}
+.addr-row{display:flex;align-items:center;gap:6px;font-size:12px;color:#666;margin-bottom:12px;min-height:20px;}
+.copy-addr-btn{font-size:10px;color:#555;background:transparent;border:1px solid #222;border-radius:4px;padding:2px 7px;cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
+.copy-addr-btn:hover{border-color:#ff4500;color:#ff4500;}
+.dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.dist-box{background:#0d0d0d;border:1px solid #1a1a1a;border-radius:10px;padding:12px 14px;}
+.dist-loc{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:3px;}
+.dist-miles{font-family:"Bebas Neue",sans-serif;font-size:30px;color:#ff4500;line-height:1;}
+.dist-sub{font-size:10px;color:#444;margin-top:2px;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+.abtn{flex:1;min-width:120px;padding:10px 14px;border-radius:8px;font-family:"Space Grotesk",sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:1px solid #2a2a2a;background:transparent;color:#888;transition:all 0.2s;text-align:center;}
+.abtn:hover{border-color:#ff4500;color:#ff4500;}
+.abtn.primary{background:#ff4500;border-color:#ff4500;color:#fff;}
+.abtn.primary:hover{background:#ff5a14;}
+.abtn.green{background:#1a3a1a;border-color:#2a5a2a;color:#4caf50;}
+.abtn.green:hover{background:#1e4a1e;}
+.abtn:disabled{opacity:0.4;cursor:not-allowed;}
+.outreach-card{background:#111;border:1px solid #1e1e1e;border-radius:16px;padding:22px;display:none;}
+.outreach-card.visible{display:block;}
+.oc-spin{width:22px;height:22px;border:2px solid #222;border-top-color:#ff4500;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.oc-loading{text-align:center;padding:20px;color:#555;font-size:13px;}
+.oc-field{margin-bottom:14px;}
+.oc-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:4px;}
+.oc-value{font-size:13px;color:#ccc;line-height:1.6;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;padding:10px 12px;}
+.oc-value.hi{color:#fff;font-weight:500;}
+.oc-handle{color:#ff4500;font-weight:500;}
+.oc-verified{font-size:10px;color:#4caf50;margin-left:6px;}
+.oc-unverified{font-size:10px;color:#ff8c00;margin-left:6px;}
+.copy-btn{font-size:11px;color:#555;background:transparent;border:1px solid #222;border-radius:4px;padding:3px 8px;cursor:pointer;margin-top:6px;transition:all 0.2s;}
+.copy-btn:hover{border-color:#ff4500;color:#ff4500;}
+.copy-btn.copied{color:#4caf50;border-color:#4caf50;}
+.notion-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#555;text-decoration:none;margin-top:8px;border:1px solid #1a1a1a;border-radius:6px;padding:6px 12px;transition:all 0.2s;}
+.notion-link:hover{border-color:#ff4500;color:#ff4500;}
+.training-card{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:16px;}
+.tc-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#444;margin-bottom:10px;}
+.phase-row{display:flex;align-items:center;gap:10px;font-size:12px;color:#444;padding:5px 8px;border-radius:6px;margin-bottom:4px;}
+.phase-row.active{background:#161616;border:1px solid #2a1a0a;color:#fff;}
+.phase-row.active .pr-range{color:#ff4500;}
+.pr-dot{width:6px;height:6px;border-radius:50%;background:#222;flex-shrink:0;}
+.phase-row.active .pr-dot{background:#ff4500;}
+.pr-range{font-weight:500;min-width:100px;font-size:11px;}
+.pr-now{font-size:10px;color:#333;margin-left:auto;}
+.phase-row.active .pr-now{color:#ff4500;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.stat-box{background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:12px;text-align:center;}
+.stat-val{font-family:"Bebas Neue",sans-serif;font-size:26px;color:#fff;line-height:1;}
+.stat-lbl{font-size:9px;color:#444;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+.prog-wrap{padding:0 2px;}
+.prog-hd{display:flex;justify-content:space-between;margin-bottom:5px;font-size:10px;}
+.prog-bar{width:100%;height:3px;background:#1a1a1a;border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:#ff4500;border-radius:2px;transition:width 0.5s;}
+.hist-box{background:#111;border:1px solid #1a1a1a;border-radius:12px;padding:14px;display:none;}
+.hist-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#444;margin-bottom:8px;}
+.hist-list{display:flex;flex-direction:column;gap:4px;max-height:140px;overflow-y:auto;}
+.hist-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#555;}
+.hist-num{font-family:"Bebas Neue",sans-serif;font-size:15px;color:#333;min-width:18px;}
+.hist-item.latest .hist-name,.hist-item.latest .hist-num{color:#ff4500;}
+.skip-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:#555;}
+.skip-toggle input{accent-color:#ff4500;}
+@media(max-width:640px){
+  .hero-title{font-size:48px;}
+  .canvas-wrap{width:320px;height:320px;}
+  .right-col{width:100%;}
+  .result-name{font-size:28px;}
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-title">NYC<br><span>Pizza</span><br>Wheel</div>
+  <div class="hero-sub" id="heroSub">Loading pizza spots...</div>
+  <div class="phase-badge"><div class="phase-dot"></div><span id="phaseLabel">Loading...</span></div>
+</div>
+
+<div class="main">
+  <div class="wheel-col">
+    <div class="canvas-wrap">
+      <canvas id="wheel" width="420" height="420"></canvas>
+      <div class="pointer-wrap"><div class="pointer-line"></div><div class="pointer-arrow"></div></div>
+    </div>
+    <button class="spin-btn" id="spinBtn" onclick="spin()" disabled>LOADING...</button>
+    <div class="spin-meta" id="spinMeta">fetching pizza data...</div>
+  </div>
+
+  <div class="right-col">
+    <div class="card" id="resultCard">
+      <div class="card-eye">Your next run is to...</div>
+      <div class="result-name" id="resultName">Waiting for spin</div>
+      <div class="addr-row" id="addrRow"></div>
+      <div class="dist-grid">
+        <div class="dist-box">
+          <div class="dist-loc">From home</div>
+          <div class="dist-miles" id="homeMi">-</div>
+          <div class="dist-sub" id="homeEta">693 Quincy St</div>
+        </div>
+        <div class="dist-box">
+          <div class="dist-loc">From work</div>
+          <div class="dist-miles" id="workMi">-</div>
+          <div class="dist-sub" id="workEta">1 WTC</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="abtn" onclick="openMaps('home')">Maps from Home</button>
+        <button class="abtn primary" onclick="openMaps('work')">Maps from Work</button>
+        <button class="abtn green" id="outreachBtn" onclick="generateOutreach()" disabled>Generate Outreach</button>
+      </div>
+    </div>
+
+    <div class="outreach-card" id="outreachCard">
+      <div class="card-eye">AI-generated outreach</div>
+      <div id="outreachContent"></div>
+    </div>
+
+    <div class="training-card">
+      <div class="tc-title">Training phases</div>
+      <div id="phaseList"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val" id="stSpins">0</div><div class="stat-lbl">Spins</div></div>
+      <div class="stat-box"><div class="stat-val" id="stVisited">0</div><div class="stat-lbl">Visited</div></div>
+      <div class="stat-box"><div class="stat-val" id="stLeft">-</div><div class="stat-lbl">In zone</div></div>
+    </div>
+
+    <div class="prog-wrap">
+      <div class="prog-hd">
+        <span style="letter-spacing:2px;text-transform:uppercase;color:#444;">All 810 progress</span>
+        <span style="color:#555;" id="progPct">0%</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="hist-box" id="histBox">
+      <div class="hist-title">Recent spins</div>
+      <div class="hist-list" id="histList"></div>
+    </div>
+
+    <label class="skip-toggle">
+      <input type="checkbox" id="skipVisited" checked onchange="refreshWheel()">
+      Skip already-spun places
+    </label>
+  </div>
+</div>
+
+<script>
+// Data loaded from API
+let PLACES = [], COORDS = {}, ADDRS = {};
+
+const HOME = {lat:40.6832,lng:-73.9235};
+const WORK = {lat:40.7127,lng:-74.0134};
+const RACE_DATE = new Date("2026-11-01");
+const PHASES = [
+  {label:"Post-half build",dMin:180,dMax:9999,minMi:3,maxMi:6,desc:"3-6 mi runs"},
+  {label:"Marathon base",dMin:120,dMax:180,minMi:4,maxMi:9,desc:"4-9 mi runs"},
+  {label:"Long run phase",dMin:60,dMax:120,minMi:7,maxMi:13,desc:"7-13 mi runs"},
+  {label:"Peak training",dMin:14,dMax:60,minMi:10,maxMi:18,desc:"10-18 mi runs"},
+  {label:"Taper",dMin:0,dMax:14,minMi:3,maxMi:7,desc:"3-7 mi taper"},
+];
+
+const SC=16,CX=210,CY=210,R=200;
+let angle=0,spinning=false,spinCount=0;
+let visited=new Set(),history=[],winner="";
+let wheelPlaces=[],curPhase=null,filteredPlaces=[];
+
+function daysToRace(){return Math.max(0,Math.floor((RACE_DATE-new Date())/86400000));}
+function getPhase(){const d=daysToRace();for(const p of PHASES)if(d>=p.dMin&&d<p.dMax)return p;return PHASES[0];}
+
+function hav(la1,lo1,la2,lo2){
+  const R=3958.8,dL=(la2-la1)*Math.PI/180,dl=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dl/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))*10)/10;
+}
+
+function getDist(name){
+  if(COORDS[name])return{hd:hav(HOME.lat,HOME.lng,COORDS[name][0],COORDS[name][1]),wd:hav(WORK.lat,WORK.lng,COORDS[name][0],COORDS[name][1])};
+  const s1=name.charCodeAt(0);
+  const lat=40.65+(name.length%18)*0.007+(s1%10)*0.01;
+  const lng=-74.05+(s1%20)*0.005+(name.length%8)*0.006;
+  return{hd:hav(HOME.lat,HOME.lng,lat,lng),wd:hav(WORK.lat,WORK.lng,lat,lng)};
+}
+
+function buildPool(){
+  const p=curPhase,skip=document.getElementById("skipVisited").checked;
+  let pool=PLACES.filter(n=>{const d=getDist(n);return d.hd>=p.minMi&&d.hd<=p.maxMi;});
+  if(pool.length<20)pool=[...PLACES];
+  filteredPlaces=pool;
+  const avail=skip?pool.filter(n=>!visited.has(n)):pool;
+  return avail.length>0?avail:pool;
+}
+
+function loadWheel(){
+  const avail=buildPool();
+  wheelPlaces=[...avail].sort(()=>Math.random()-0.5).slice(0,SC);
+}
+
+function drawWheel(rot){
+  const canvas=document.getElementById("wheel");
+  if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const slice=(2*Math.PI)/SC;
+  ctx.clearRect(0,0,420,420);
+  if(wheelPlaces.length===0){
+    ctx.fillStyle="#222";ctx.fillRect(0,0,420,420);
+    ctx.fillStyle="#ff4500";ctx.font="20px Space Grotesk,sans-serif";
+    ctx.textAlign="center";ctx.fillText("Loading...",CX,CY);
+    return;
+  }
+  for(let i=0;i<SC;i++){
+    const s=rot+i*slice,e=s+slice;
+    ctx.beginPath();ctx.moveTo(CX,CY);ctx.arc(CX,CY,R,s,e);ctx.closePath();
+    ctx.fillStyle=i%2===0?"#161616":"#0e0e0e";ctx.fill();
+    ctx.strokeStyle="#050505";ctx.lineWidth=1;ctx.stroke();
+    ctx.save();ctx.translate(CX,CY);ctx.rotate(s+slice/2);
+    const label=(wheelPlaces[i]||"").substring(0,22);
+    ctx.fillStyle=i%2===0?"#ff4500":"#666";
+    ctx.font="500 11px Space Grotesk,sans-serif";ctx.textAlign="right";
+    ctx.fillText(label.length>20?label.substring(0,19)+"...":label,R-10,4);
+    ctx.restore();
+  }
+  ctx.beginPath();ctx.arc(CX,CY,R,0,2*Math.PI);ctx.strokeStyle="#ff4500";ctx.lineWidth=2;ctx.stroke();
+  for(let i=0;i<SC;i++){
+    const a=rot+i*(2*Math.PI/SC);
+    ctx.beginPath();ctx.moveTo(CX+(R-1)*Math.cos(a),CY+(R-1)*Math.sin(a));
+    ctx.lineTo(CX+(R+7)*Math.cos(a),CY+(R+7)*Math.sin(a));
+    ctx.strokeStyle="#ff4500";ctx.lineWidth=1.5;ctx.stroke();
+  }
+  ctx.beginPath();ctx.arc(CX,CY,34,0,2*Math.PI);ctx.fillStyle="#0a0a0a";ctx.fill();
+  ctx.strokeStyle="#ff4500";ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle="#ff4500";ctx.font="700 11px Space Grotesk,sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("NYC",CX,CY);
+}
+
+function showResult(name){
+  document.getElementById("resultName").textContent=name;
+  document.getElementById("resultCard").classList.add("active");
+  const addr=ADDRS[name];
+  const row=document.getElementById("addrRow");
+  if(addr){
+    row.innerHTML="<span style='color:#555;'>"+addr+"</span><button class='copy-addr-btn' id='addrCopyBtn' onclick='copyAddr()'>Copy</button>";
+    row.style.display="flex";row.style.alignItems="center";row.style.gap="6px";
+  } else {row.innerHTML="";}
+  const {hd,wd}=getDist(name);
+  document.getElementById("homeMi").textContent=hd.toFixed(1)+" mi";
+  document.getElementById("homeEta").textContent="~"+Math.round(hd*1.25*10)+" min run";
+  document.getElementById("workMi").textContent=wd.toFixed(1)+" mi";
+  document.getElementById("workEta").textContent="~"+Math.round(wd*1.25*10)+" min run";
+}
+
+function spin(){
+  if(spinning||wheelPlaces.length===0)return;
+  spinning=true;
+  document.getElementById("spinBtn").disabled=true;
+  document.getElementById("outreachBtn").disabled=true;
+  document.getElementById("resultCard").classList.remove("active");
+  document.getElementById("outreachCard").classList.remove("visible");
+  document.getElementById("resultName").textContent="...";
+  document.getElementById("addrRow").innerHTML="";
+  document.getElementById("homeMi").textContent="-";
+  document.getElementById("workMi").textContent="-";
+
+  const skip=document.getElementById("skipVisited").checked;
+  const avail=wheelPlaces.filter(n=>!skip||!visited.has(n));
+  winner=(avail.length>0?avail:wheelPlaces)[Math.floor(Math.random()*(avail.length||wheelPlaces.length))];
+  const slot=wheelPlaces.indexOf(winner);
+  const slice=(2*Math.PI)/SC;
+  const slotMid=slot*slice+slice/2;
+  let base=-Math.PI/2-slotMid;
+  while(base<0)base+=2*Math.PI;
+  const target=base+(5+Math.floor(Math.random()*4))*2*Math.PI;
+  const dur=4000+Math.random()*1000;
+  const startA=angle%(2*Math.PI);
+  const t0=performance.now();
+  function ease(t){return 1-Math.pow(1-t,4);}
+  function frame(now){
+    const p=Math.min((now-t0)/dur,1);
+    const cur=startA+(target-startA)*ease(p);
+    angle=cur;drawWheel(cur%(2*Math.PI));
+    if(p<1){requestAnimationFrame(frame);return;}
+    spinning=false;spinCount++;visited.add(winner);
+    document.getElementById("spinBtn").disabled=false;
+    document.getElementById("spinBtn").textContent="SPIN AGAIN";
+    document.getElementById("outreachBtn").disabled=false;
+    showResult(winner);
+    history.unshift(winner);if(history.length>10)history.pop();
+    updateStats();updateHistory();
+    try{
+      localStorage.setItem("lastSpin",winner);
+      localStorage.setItem("visitedPlaces",JSON.stringify([...visited]));
+      localStorage.setItem("spinHistory",JSON.stringify(history));
+      localStorage.setItem("spinCount",String(spinCount));
+    }catch(e){}
+    document.getElementById("spinMeta").textContent=spinCount+" spin"+(spinCount!==1?"s":"")+" · "+(filteredPlaces.filter(n=>!visited.has(n)).length)+" in zone remaining";
+    loadWheel();
+  }
+  requestAnimationFrame(frame);
+}
+
+function copyAddr(){
+  const addr=ADDRS[winner];if(!addr)return;
+  navigator.clipboard.writeText(addr).then(()=>{
+    const btn=document.getElementById("addrCopyBtn");
+    if(btn){btn.textContent="Copied!";btn.style.color="#4caf50";btn.style.borderColor="#4caf50";
+      setTimeout(()=>{btn.textContent="Copy";btn.style.color="";btn.style.borderColor="";},2000);}
+  });
+}
+
+async function generateOutreach(){
+  const btn=document.getElementById("outreachBtn");
+  btn.disabled=true;btn.textContent="Generating...";
+  const card=document.getElementById("outreachCard");
+  card.classList.add("visible");
+  document.getElementById("outreachContent").innerHTML="<div class='oc-loading'><div class='oc-spin'></div>Asking Claude...</div>";
+  try{
+    const resp=await fetch("/api/outreach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pizzaPlace:winner})});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error);
+    if(data.distanceFromHome){
+      document.getElementById("homeMi").textContent=data.distanceFromHome.toFixed(1)+" mi";
+      document.getElementById("homeEta").textContent="~"+Math.round(data.distanceFromHome*1.25*10)+" min run";
+    }
+    if(data.distanceFromWork){
+      document.getElementById("workMi").textContent=data.distanceFromWork.toFixed(1)+" mi";
+      document.getElementById("workEta").textContent="~"+Math.round(data.distanceFromWork*1.25*10)+" min run";
+    }
+    const igBadge=data.instagram_verified?"<span class='oc-verified'>verified</span>":"<span class='oc-unverified'>unverified - check first</span>";
+    const infoRows=[
+      data.address?"<div style='font-size:12px;color:#888;margin-top:4px;'>"+data.address+"</div>":"",
+      data.website?"<div style='font-size:12px;margin-top:2px;'><a href='"+data.website+"' target='_blank' style='color:#ff4500;'>website</a></div>":"",
+      data.hours?"<div style='font-size:12px;color:#888;margin-top:2px;'>hours: "+data.hours+"</div>":"",
+    ].join("");
+    var html="";
+    html+="<div class='oc-field'><div class='oc-label'>Instagram handle "+igBadge+"</div>";
+    html+="<div class='oc-value oc-handle'>"+(data.instagram_handle||"unknown")+"</div>"+infoRows+"</div>";
+    html+="<div class='oc-field'><div class='oc-label'>Famous for</div>";
+    html+="<div class='oc-value'>"+(data.famous_for||"-")+"</div></div>";
+    html+="<div class='oc-field'><div class='oc-label'>Instagram DM</div>";
+    html+="<div class='oc-value hi' id='dmText'>"+(data.dm_message||"")+"</div>";
+    html+="<button class='copy-btn' onclick='copyText(";
+    html+='"dmText"';
+    html+=",this)'>Copy DM</button></div>";
+    html+="<div class='oc-field'><div class='oc-label'>Email subject</div>";
+    html+="<div class='oc-value'>"+(data.email_subject||"")+"</div></div>";
+    html+="<div class='oc-field'><div class='oc-label'>Email body</div>";
+    html+="<div class='oc-value' id='emailText'>"+(data.email_body||"")+"</div>";
+    html+="<button class='copy-btn' onclick='copyText(";
+    html+='"emailText"';
+    html+=",this)'>Copy Email</button></div>";
+    if(data.notionUrl)html+="<a class='notion-link' href='"+data.notionUrl+"' target='_blank'>View in Notion CRM</a>";
+    if(data.notionError)html+="<div style='font-size:11px;color:#ff4500;margin-top:8px;'>Notion: "+data.notionError+"</div>";
+    document.getElementById("outreachContent").innerHTML=html;
+  }catch(err){
+    document.getElementById("outreachContent").innerHTML="<div class='oc-loading' style='color:#ff4500;'>Error: "+err.message+"</div>";
+  }
+  btn.disabled=false;btn.textContent="Generate Outreach";
+}
+
+function copyText(id,btn){
+  const text=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent="Copied!";btn.classList.add("copied");
+    setTimeout(()=>{btn.textContent=id==="dmText"?"Copy DM":"Copy Email";btn.classList.remove("copied");},2000);
+  });
+}
+
+function openMaps(from){
+  const origin=from==="home"?"693+Quincy+St+Brooklyn+NY":"1+World+Trade+Center+New+York+NY";
+  const dest=encodeURIComponent(winner+" New York City");
+  window.open("https://www.google.com/maps/dir/"+origin+"/"+dest,"_blank");
+}
+
+function updateStats(){
+  document.getElementById("stSpins").textContent=spinCount;
+  document.getElementById("stVisited").textContent=visited.size;
+  document.getElementById("stLeft").textContent=Math.max(0,filteredPlaces.filter(n=>!visited.has(n)).length);
+  const pct=Math.round((visited.size/PLACES.length)*100);
+  document.getElementById("progPct").textContent=pct+"%";
+  document.getElementById("progFill").style.width=pct+"%";
+}
+
+function updateHistory(){
+  document.getElementById("histBox").style.display="block";
+  document.getElementById("histList").innerHTML=history.map((n,i)=>{
+    const cls="hist-item"+(i===0?" latest":"");
+    return "<div class='"+cls+"'><span class='hist-num'>"+(i+1)+"</span><span class='hist-name'>"+n+"</span></div>";
+  }).join("");
+}
+
+}
+
+function buildPhaseList(){
+  const days=daysToRace();
+  document.getElementById("phaseList").innerHTML=PHASES.map(p=>{
+    const active=p===curPhase;
+    return "<div class='phase-row"+(active?" active":"")+"'><div class='pr-dot'></div><span class='pr-range'>"+p.desc+"</span><span class='pr-now'>"+(active?"now":"")+"</span></div>";
+  }).join("");
+}
+
+function refreshWheel(){loadWheel();drawWheel(angle%(2*Math.PI));updateStats();}
+
+async function init(){
+  // Draw loading state first
+  drawWheel(0);
+
+  // Restore from localStorage
+  try{
+    const sv=localStorage.getItem("visitedPlaces");
+    const sh=localStorage.getItem("spinHistory");
+    const sc=localStorage.getItem("spinCount");
+    if(sv)JSON.parse(sv).forEach(p=>visited.add(p));
+    if(sh)history=JSON.parse(sh);
+    if(sc)spinCount=parseInt(sc)||0;
+  }catch(e){}
+
+  // Fetch pizza data from API
+  try{
+    const resp=await fetch("/api/data");
+    const data=await resp.json();
+    PLACES=data.places;
+    COORDS=data.coords;
+    ADDRS=data.addrs;
+  }catch(err){
+    document.getElementById("phaseLabel").textContent="Error loading data: "+err.message;
+    document.getElementById("spinMeta").textContent="Could not load pizza data";
+    return;
+  }
+
+  // Initialize
+  curPhase=getPhase();
+  const days=daysToRace();
+  document.getElementById("phaseLabel").textContent=curPhase.label+" · "+curPhase.desc+" · "+days+" days to race";
+  buildPhaseList();
+  loadWheel();
+  document.getElementById("heroSub").textContent=filteredPlaces.length+" spots in your training zone";
+  document.getElementById("spinBtn").disabled=false;
+  document.getElementById("spinBtn").textContent=spinCount>0?"SPIN AGAIN":"SPIN";
+  drawWheel(0);
+  updateStats();
+
+  if(spinCount>0&&history.length>0){
+    winner=history[0];
+    showResult(winner);
+    document.getElementById("outreachBtn").disabled=false;
+    updateHistory();
+  }
+
+  document.getElementById("spinMeta").textContent="filtered to your training zone";
+}
+
+window.addEventListener("load",init);
+</script>
+</body>
+</html>
